@@ -48,6 +48,15 @@ adorn the _aws:rep:udpateregion_ attribute to the params before passing to your
 dynamodb document client. This is different than v1 in that it adorns the field
 before the save in your application, not after.
 
+### Functions
+
+Function            | Applicable props in params
+--------------------|---------------------------
+dedupeUpdate        | UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues
+dedupeBatchWrite    | PutRequest Item
+dedupeTransactWrite | Put Item, Update Expressions
+dedupePut           | Put Item
+
 ## Sample Usage
 
 ```js
@@ -81,3 +90,12 @@ const main = async () => {
 
 main();
 ```
+
+For more examples on using the functions in this package, check out the code on
+GitHub, specifically the unit tests.
+
+For params help see the AWS JavaScript SDK for DynamoDB.DocumentClient
+- [update](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#update-property)
+- [batchWrite](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property)
+- [transactWrite](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#transactWrite-property)
+- [put](https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property)
