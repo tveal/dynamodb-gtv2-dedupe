@@ -12,7 +12,7 @@ const AWS = require('aws-sdk-mock');
 describe('index.js', () => {
   let ddb;
   beforeEach(() => {
-    delete process.env.AWS_REGION;
+    process.env.AWS_REGION = 'us-west-2';
     ddb = new DynamoDB.DocumentClient({
       httpOptions: { timeout: 1500 },
       logger: { log: /* istanbul ignore next */ (msg) => console.log(msg) },
@@ -60,6 +60,14 @@ describe('index.js', () => {
       }
 
       expect(err.message).to.equal('db.update is not a function. Make sure you pass in a DynamoDB.DocumentClient');
+    });
+
+    it('should call db.update with provided callback', async () => {
+      let msg;
+      await dedupeUpdate(ddb)({}, (err, res) => {
+        msg = 'custom callback';
+      });
+      expect(msg).to.equal('custom callback');
     });
 
     it('should call db.update with unmodified params', async () => {
@@ -133,54 +141,12 @@ describe('index.js', () => {
       expect(err.message).to.equal('db.batchWrite is not a function. Make sure you pass in a DynamoDB.DocumentClient');
     });
 
-    it('should call db.batchWrite with unmodified params', async () => {
-      const params = {
-        RequestItems: {
-          'Table-1': [
-            {
-              DeleteRequest: {
-                Key: { HashKey: 'someKey' },
-              },
-            },
-            {
-              PutRequest: {
-                Item: {
-                  HashKey: 'anotherKey',
-                  NumAttribute: 1,
-                  BoolAttribute: true,
-                  ListAttribute: [1, 'two', false],
-                  MapAttribute: { foo: 'bar' },
-                },
-              },
-            },
-          ],
-        },
-      };
-
-      const res = await dedupeBatchWrite(ddb)(params);
-
-      expect(res.params).to.deep.equal({
-        RequestItems: {
-          'Table-1': [
-            {
-              DeleteRequest: {
-                Key: { HashKey: 'someKey' },
-              },
-            },
-            {
-              PutRequest: {
-                Item: {
-                  HashKey: 'anotherKey',
-                  NumAttribute: 1,
-                  BoolAttribute: true,
-                  ListAttribute: [1, 'two', false],
-                  MapAttribute: { foo: 'bar' },
-                },
-              },
-            },
-          ],
-        },
+    it('should call db.batchWrite with provided callback', async () => {
+      let msg;
+      await dedupeBatchWrite(ddb)({}, (err, res) => {
+        msg = 'custom callback';
       });
+      expect(msg).to.equal('custom callback');
     });
 
     it('should call db.batchWrite with unmodified params for missing RequestItems', async () => {
@@ -269,66 +235,12 @@ describe('index.js', () => {
       expect(err.message).to.equal('db.transactWrite is not a function. Make sure you pass in a DynamoDB.DocumentClient');
     });
 
-    it('should call db.transactWrite with unmodified params', async () => {
-      const params = {
-        TransactItems: [{
-          Put: {
-            TableName: 'Table0',
-            Item: {
-              HashKey: 'haskey',
-              NumAttribute: 1,
-              BoolAttribute: true,
-              ListAttribute: [1, 'two', false],
-              MapAttribute: { foo: 'bar' },
-              NullAttribute: null,
-            },
-          },
-        }, {
-          Update: {
-            TableName: 'Table1',
-            Key: { HashKey: 'hashkey' },
-            UpdateExpression: 'set #a = :x + :y',
-            ConditionExpression: '#a < :MAX',
-            ExpressionAttributeNames: { '#a': 'Sum' },
-            ExpressionAttributeValues: {
-              ':x': 20,
-              ':y': 45,
-              ':MAX': 100,
-            },
-          },
-        }],
-      };
-
-      const res = await dedupeTransactWrite(ddb)(params);
-
-      expect(res.params).to.deep.equal({
-        TransactItems: [{
-          Put: {
-            TableName: 'Table0',
-            Item: {
-              HashKey: 'haskey',
-              NumAttribute: 1,
-              BoolAttribute: true,
-              ListAttribute: [1, 'two', false],
-              MapAttribute: { foo: 'bar' },
-              NullAttribute: null,
-            },
-          },
-        }, {
-          Update: {
-            TableName: 'Table1',
-            Key: { HashKey: 'hashkey' },
-            UpdateExpression: 'set #a = :x + :y',
-            ConditionExpression: '#a < :MAX',
-            ExpressionAttributeNames: { '#a': 'Sum' },
-            ExpressionAttributeValues: {
-              ':x': 20,
-              ':y': 45,
-              ':MAX': 100,
-            },
-          },
-        }],
+    it('should call db.transactWrite with provided callback', async () => {
+      let msg;
+      await dedupeTransactWrite(ddb)({}, (err, res) => {
+        msg = 'custom callback';
       });
+      expect(msg).to.equal('custom callback');
     });
 
     it('should call db.transactWrite with unmodified params for missing TransactItems', async () => {
@@ -580,32 +492,12 @@ describe('index.js', () => {
       expect(err.message).to.equal('db.put is not a function. Make sure you pass in a DynamoDB.DocumentClient');
     });
 
-    it('should call db.put with unmodified params for no AWS_REGION', async () => {
-      const params = {
-        TableName: 'Table',
-        Item: {
-          HashKey: 'haskey',
-          NumAttribute: 1,
-          BoolAttribute: true,
-          ListAttribute: [1, 'two', false],
-          MapAttribute: { foo: 'bar' },
-          NullAttribute: null,
-        },
-      };
-
-      const res = await dedupePut(ddb)(params);
-
-      expect(res.params).to.deep.equal({
-        TableName: 'Table',
-        Item: {
-          HashKey: 'haskey',
-          NumAttribute: 1,
-          BoolAttribute: true,
-          ListAttribute: [1, 'two', false],
-          MapAttribute: { foo: 'bar' },
-          NullAttribute: null,
-        },
+    it('should call db.put with provided callback', async () => {
+      let msg;
+      await dedupePut(ddb)({}, (err, res) => {
+        msg = 'custom callback';
       });
+      expect(msg).to.equal('custom callback');
     });
 
     it('should adorn params with aws:rep:updateregion then call db.put', async () => {

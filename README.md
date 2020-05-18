@@ -72,8 +72,10 @@ const main = async () => {
     
     const params = {
         TableName: 'test-db-table-name',
-        Keys: ['HashKey', 'SortKey'],
-        ReturnValues: 'ALL_NEW',
+        Key: {
+            HashKey: 'my-hash-key',
+            SortKey: 'my-sort-key',
+        },
         UpdateExpression: 'SET #field1 = :field1',
         ExpressionAttributeNames: {
             '#field1': 'message',

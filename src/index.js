@@ -1,18 +1,18 @@
 import get from 'lodash/get';
-import { createLogger } from './utils';
+
+export { createLogger } from './utils';
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#update-property
 export const dedupeUpdate = (db) => (params, callback) => {
   validateFunction(db, 'update');
-  const log = createLogger('dedupUpdate');
 
-  if (process.env.AWS_REGION) {
-    modifyUpdateExpections(params);
+  modifyUpdateExpections(params);
+
+  if (callback) {
+    return db.update(params, callback);
   } else {
-    log.info('Not adorning global tatble v2 dedupe attribute; Not all conditions satisfied.');
+    return db.update(params);
   }
-
-  return db.update(params, callback);
 };
 
 const modifyUpdateExpections = (params) => {
@@ -31,44 +31,55 @@ export const dedupeBatchWrite = (db) => (params, callback) => {
   validateFunction(db, 'batchWrite');
   const RequestItems = get(params, 'RequestItems', {});
 
-  if (process.env.AWS_REGION) {
-    Object.keys(RequestItems)
-      .map((table) => ({
-        table,
-        actions: RequestItems[table],
-      }))
-      .map((uow) => uow.actions.forEach((action) => {
-        if (action.PutRequest) action.PutRequest.Item['aws:rep:updateregion'] = process.env.AWS_REGION;
-      }));
-  }
+  Object.keys(RequestItems)
+    .map((table) => ({
+      table,
+      actions: RequestItems[table],
+    }))
+    .map((uow) => uow.actions.forEach((action) => {
+      if (action.PutRequest) action.PutRequest.Item['aws:rep:updateregion'] = process.env.AWS_REGION;
+    }));
 
-  return db.batchWrite(params, callback);
+  if (callback) {
+    return db.batchWrite(params, callback);
+  } else {
+    return db.batchWrite(params);
+  }
 };
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#transactWrite-property
 export const dedupeTransactWrite = (db) => (params, callback) => {
   validateFunction(db, 'transactWrite');
   const TransactItems = get(params, 'TransactItems', []);
-  if (process.env.AWS_REGION) {
-    TransactItems.forEach((action) => {
-      const putItem = get(action, 'Put.Item');
-      if (putItem) {
-        putItem['aws:rep:updateregion'] = process.env.AWS_REGION;
-      } else if (action.Update) {
-        modifyUpdateExpections(action.Update);
-      }
-    });
+
+  TransactItems.forEach((action) => {
+    const putItem = get(action, 'Put.Item');
+    if (putItem) {
+      putItem['aws:rep:updateregion'] = process.env.AWS_REGION;
+    } else if (action.Update) {
+      modifyUpdateExpections(action.Update);
+    }
+  });
+
+  if (callback) {
+    return db.transactWrite(params, callback);
+  } else {
+    return db.transactWrite(params);
   }
-  return db.transactWrite(params, callback);
 };
 
 // https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#put-property
 export const dedupePut = (db) => (params, callback) => {
   validateFunction(db, 'put');
-  if (process.env.AWS_REGION && params.Item) {
+  if (params.Item) {
     params.Item['aws:rep:updateregion'] = process.env.AWS_REGION;
   }
-  return db.put(params, callback);
+
+  if (callback) {
+    return db.put(params, callback);
+  } else {
+    return db.put(params);
+  }
 };
 
 const validateFunction = (db, funcName) => {
