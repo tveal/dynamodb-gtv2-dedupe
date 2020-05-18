@@ -1,33 +1,27 @@
 import 'mocha';
-import { DynamoDB } from 'aws-sdk';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 
 import {
   dedupeUpdate, dedupeBatchWrite, dedupeTransactWrite, dedupePut,
 } from '../../src';
 
-const AWS = require('aws-sdk-mock');
-
 describe('index.js', () => {
-  let ddb;
+  const mockDbFunc = (params, cb) => {
+    if (cb) {
+      cb(null, params);
+    }
+    return { params, cb };
+  };
+  const ddb = {
+    update: mockDbFunc,
+    batchWrite: mockDbFunc,
+    transactWrite: mockDbFunc,
+    put: mockDbFunc,
+  };
   beforeEach(() => {
     process.env.AWS_REGION = 'us-west-2';
-    ddb = new DynamoDB.DocumentClient({
-      httpOptions: { timeout: 1500 },
-      logger: { log: /* istanbul ignore next */ (msg) => console.log(msg) },
-      convertEmptyValues: true,
-    });
-  });
-  afterEach(() => {
-    sinon.restore();
-    AWS.restore('DynamoDB.DocumentClient');
   });
   describe('dedupeUpdate', () => {
-    beforeEach(() => {
-      AWS.mock('DynamoDB.DocumentClient', 'udpate', (params, cb) => cb(null, params));
-    });
-
     it('should throw error for no db', async () => {
       const params = {
         TableName: 'test-db-table-name',
@@ -117,10 +111,6 @@ describe('index.js', () => {
   });
 
   describe('dedupeBatchWrite', () => {
-    beforeEach(() => {
-      AWS.mock('DynamoDB.DocumentClient', 'batchWrite', (params, cb) => cb(null, params));
-    });
-
     it('should throw error for no db', async () => {
       let err;
       try {
@@ -211,10 +201,6 @@ describe('index.js', () => {
   });
 
   describe('dedupeTransactWrite', () => {
-    beforeEach(() => {
-      AWS.mock('DynamoDB.DocumentClient', 'transactWrite', (params, cb) => cb(null, params));
-    });
-
     it('should throw error for no db', async () => {
       let err;
       try {
@@ -468,10 +454,6 @@ describe('index.js', () => {
   });
 
   describe('dedupePut', () => {
-    beforeEach(() => {
-      AWS.mock('DynamoDB.DocumentClient', 'put', (params, cb) => cb(null, params));
-    });
-
     it('should throw error for no db', async () => {
       let err;
       try {
