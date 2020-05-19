@@ -8,6 +8,13 @@ export const dedupeUpdate = (db) => (params, callback) => {
 
   modifyUpdateExpections(params);
 
+  if (params.AttributeUpdates) {
+    params.AttributeUpdates['aws:rep:updateregion'] = {
+      Action: 'PUT',
+      Value: process.env.AWS_REGION,
+    };
+  }
+
   if (callback) {
     return db.update(params, callback);
   } else {

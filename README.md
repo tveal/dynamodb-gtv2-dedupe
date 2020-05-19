@@ -52,7 +52,7 @@ before the save in your application, not after.
 
 Function            | Applicable props in params
 --------------------|---------------------------
-dedupeUpdate        | UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues
+dedupeUpdate        | UpdateExpression, ExpressionAttributeNames, ExpressionAttributeValues, AttributeUpdates
 dedupeBatchWrite    | PutRequest Item
 dedupeTransactWrite | Put Item, Update Expressions
 dedupePut           | Put Item

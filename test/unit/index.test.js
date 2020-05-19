@@ -108,6 +108,39 @@ describe('index.js', () => {
         },
       });
     });
+
+    it('should adorn AttributeUpdates with aws:rep:updateregion and call db.update', async () => {
+      process.env.AWS_REGION = 'us-east-1';
+      const params = {
+        AttributeUpdates: {
+          f1: {
+            Action: 'PUT',
+            Value: 'idk',
+          },
+        },
+        TableName: 'test-db-table-name',
+        Keys: ['hk', 'sk'],
+        ReturnValues: 'ALL_NEW',
+      };
+
+      const res = await dedupeUpdate(ddb)(params);
+
+      expect(res.params).to.deep.equal({
+        AttributeUpdates: {
+          'f1': {
+            Action: 'PUT',
+            Value: 'idk',
+          },
+          'aws:rep:updateregion': {
+            Action: 'PUT',
+            Value: 'us-east-1',
+          },
+        },
+        TableName: 'test-db-table-name',
+        Keys: ['hk', 'sk'],
+        ReturnValues: 'ALL_NEW',
+      });
+    });
   });
 
   describe('dedupeBatchWrite', () => {
